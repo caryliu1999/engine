@@ -23,9 +23,9 @@
  THE SOFTWARE.
  ****************************************************************************/
 
-var ValueType = require('./value-type');
-var js = require('../platform/js');
-var CCClass = require('../platform/CCClass');
+const ValueType = require('./value-type');
+const js = require('../platform/js');
+const CCClass = require('../platform/CCClass');
 
 /**
  * !#en Representation of 2D vectors and points.
@@ -133,6 +133,20 @@ proto.getYaw = function () {
     var siny = 2.0 * (this.w * this.z + this.x * this.y);
     var cosy = 1.0 - 2.0 * (this.y * this.y + this.z * this.z);  
     return 180 * Math.atan2(siny, cosy) / Math.PI;
+};
+
+proto.getEulerAngles = function (out) {
+    out = out || cc.v3();
+    out.x = this.getRoll();
+    out.y = this.getPitch();
+    out.z = this.getYaw();
+    return out;
+}
+
+proto.lerp = function (to, ratio, out) {
+    out = out || new cc.Quat();
+    cc.vmath.quat.slerp(out, this, to, ratio);
+    return out;
 };
 
 /**

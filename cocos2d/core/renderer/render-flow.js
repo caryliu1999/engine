@@ -31,27 +31,6 @@ _proto._localTransform = function (node) {
     this._next._func(node);
 };
 
-function mul (out, a, b) {
-    let aa=a.m00, ab=a.m01, ac=a.m04, ad=a.m05, atx=a.m12, aty=a.m13;
-    let ba=b.m00, bb=b.m01, bc=b.m04, bd=b.m05, btx=b.m12, bty=b.m13;
-    if (bb !== 0 || bc !== 0) {
-        out.m00 = aa * ba + ab * bc;
-        out.m01 = aa * bb + ab * bd;
-        out.m04 = ac * ba + ad * bc;
-        out.m05 = ac * bb + ad * bd;
-        out.m12 = ba * atx + bc * aty + btx;
-        out.m13 = bb * atx + bd * aty + bty;
-    }
-    else {
-        out.m00 = aa * ba;
-        out.m01 = ab * bd;
-        out.m04 = ac * ba;
-        out.m05 = ad * bd;
-        out.m12 = ba * atx + btx;
-        out.m13 = bd * aty + bty;
-    }
-}
-
 _proto._worldTransform = function (node) {
     _walker.worldMatDirty ++;
 
@@ -60,7 +39,7 @@ _proto._worldTransform = function (node) {
     t.m12 = position.x;
     t.m13 = position.y;
 
-    mul(node._worldMatrix, t, node._parent._worldMatrix);
+    node._mulMat(node._worldMatrix, node._parent._worldMatrix, t);
     node._renderFlag &= ~WORLD_TRANSFORM;
     this._next._func(node);
 
@@ -118,7 +97,7 @@ _proto._children = function (node) {
     let children = node._children;
     for (let i = 0, l = children.length; i < l; i++) {
         let c = children[i];
-        if (!c._activeInHierarchy) continue;
+        if (!c._activeInHierarchy || c._opacity === 0) continue;
         _cullingMask = c._cullingMask = c.groupIndex === 0 ? cullingMask : 1 << c.groupIndex;
         c._renderFlag |= worldTransformFlag | worldOpacityFlag;
 

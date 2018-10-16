@@ -49,6 +49,11 @@ function downloadScript (item, callback, isAsync) {
     var url = item.url,
         d = document,
         s = document.createElement('script');
+
+    if (window.location.protocol !== 'file:') {
+        s.crossOrigin = 'anonymous';
+    }
+
     s.async = isAsync;
     s.src = urlAppendTimestamp(url);
     function loadHandler () {
@@ -143,6 +148,8 @@ var defaultMap = {
     'tiff' : downloadImage,
     'webp' : downloadWebp,
     'image' : downloadImage,
+    'pvr': downloadBinary,
+    'etc': downloadBinary,
 
     // Audio
     'mp3' : downloadAudio,
@@ -179,6 +186,7 @@ var defaultMap = {
 
     // Binary
     'binary' : downloadBinary,
+    'bin': downloadBinary,
 
     'default' : downloadText
 };

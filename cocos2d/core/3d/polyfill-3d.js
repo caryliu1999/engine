@@ -23,11 +23,14 @@
  THE SOFTWARE.
  ****************************************************************************/
 
+
 const Node = require('../CCNode');
 const EventType = Node.EventType;
 const DirtyFlag = Node._LocalDirtyFlag;
 const math = require('../renderer/render-engine').math;
 const RenderFlow = require('../renderer/render-flow');
+const misc = require('../utils/misc');
+const vec3 = cc.vmath.vec3;
 
 // ====== Node transform polyfills ======
 const ONE_DEGREE = Math.PI / 180;
@@ -35,9 +38,6 @@ const ONE_DEGREE = Math.PI / 180;
 const POSITION_ON = 1 << 0;
 const SCALE_ON = 1 << 1;
 const ROTATION_ON = 1 << 2;
-
-let _updateLocalMatrix2d = null;
-let _calculWorldMatrix2d = null;
 
 function _updateLocalMatrix3d () {
     if (this._localMatDirty) {
@@ -82,32 +82,6 @@ function _calculWorldMatrix3d () {
 }
 
 
-    
-/**
- * !#en Returns a copy of the position (x, y, z) of the node in its parent's coordinates.
- * !#zh 获取节点在父节点坐标系中的位置（x, y, z）。
- * @method getPosition
- * @return {Vec3} The position (x, y, z) of the node in its parent's coordinates
- */
-function getPosition () {
-    return new cc.Vec3(this._position);
-}
-
-/**
- * !#en
- * Sets the position (x, y, z) of the node in its parent's coordinates.<br/>
- * Usually we use cc.v3(x, y, z) to compose cc.Vec3 object.<br/>
- * and Passing two numbers (x, y, z) is more efficient than passing cc.Vec3 object.
- * !#zh
- * 设置节点在父节点坐标系中的位置。<br/>
- * 可以通过两种方式设置坐标点：<br/>
- * 1. 传入 3 个数值 x, y, z。<br/>
- * 2. 传入 cc.v3(x, y, z) 类型为 cc.Vec3 的对象。
- * @method setPosition
- * @param {Vec3|Number} newPosOrX - X coordinate for position or the position (x, y, z) of the node in coordinates
- * @param {Number} [y] - Y coordinate for position
- * @param {Number} [z] - Z coordinate for position
- */
 function setPosition (newPosOrX, y, z) {
     let x;
     if (y === undefined) {
@@ -126,7 +100,7 @@ function setPosition (newPosOrX, y, z) {
     }
 
     if (CC_EDITOR) {
-        let oldPosition = new cc.Vec3(pos);
+        var oldPosition = new cc.Vec3(pos);
     }
 
     pos.x = x;
@@ -137,75 +111,15 @@ function setPosition (newPosOrX, y, z) {
 
     // fast check event
     if (this._eventMask & POSITION_ON) {
-        this.emit(EventType.POSITION_CHANGED);
-    }
-}
-
-/**
- * !#en Get rotation of node (in quaternion).
- * !#zh 获取该节点的 quaternion 旋转角度。
- * @method getQuat
- * @return {cc.Quat} Quaternion object represents the rotation
- */
-function getQuat () {
-    return math.quat.clone(this._quat);
-}
-
-/**
- * !#en Set rotation of node (in quaternion).
- * !#zh 设置该节点的 quaternion 旋转角度。
- * @method setQuat
- * @param {cc.Quat|Number} quat Quaternion object represents the rotation or the x value of quaternion
- * @param {Number} y y value of quternion
- * @param {Number} z z value of quternion
- * @param {Number} w w value of quternion
- */
-function setQuat (quat, y, z, w) {
-    let x;
-    if (y === undefined) {
-        x = quat.x;
-        y = quat.y;
-        z = quat.z;
-        w = quat.w;
-    }
-
-    let old = this._quat;
-    if (old.x !== x || old.y !== y || old.z !== z || old.w !== w) {
-        old.x = x;
-        old.y = y;
-        old.z = z;
-        old.w = w;
-        this.setLocalDirty(DirtyFlag.ROTATION);
-        this._renderFlag |= RenderFlow.FLAG_TRANSFORM;
-
-        if (this._eventMask & ROTATION_ON) {
-            this.emit(EventType.ROTATION_CHANGED);
+        if (CC_EDITOR) {
+            this.emit(EventType.POSITION_CHANGED, oldPosition);
+        }
+        else {
+            this.emit(EventType.POSITION_CHANGED);
         }
     }
 }
 
-/**
- * !#en
- * Returns the scale of the node.
- * !#zh 获取节点的缩放。
- * @method getScale
- * @return {cc.Vec3} The scale factor
- */
-function getScale () {
-    return cc.v3(this._scale);
-}
-
-/**
- * !#en Sets the scale of three axis in local coordinates of the node.
- * !#zh 设置节点在本地坐标系中三个坐标轴上的缩放比例。
- * @method setScale
- * @param {Number|Vec3} x - scaleX or scale object
- * @param {Number} [y]
- * @param {Number} [z]
- * @example
- * node.setScale(cc.v2(2, 2, 2));
- * node.setScale(2);
- */
 function setScale (x, y, z) {
     if (x && typeof x !== 'number') {
         y = x.y;
@@ -232,32 +146,105 @@ function setScale (x, y, z) {
     }
 }
 
-cc._polyfill3D = module.exports = {
-    enabled: false,
-    enable () {
-        let proto = cc.Node.prototype;
-        if (!_updateLocalMatrix2d) {
-            _updateLocalMatrix2d = proto._updateLocalMatrix;
-            _calculWorldMatrix2d = proto._calculWorldMatrix;
-        }
-        if (!this.enabled) {
-            proto._updateLocalMatrix = _updateLocalMatrix3d;
-            proto._calculWorldMatrix = _calculWorldMatrix3d;
+function _update3DFunction () {
+    if (this._is3DNode) {
+        this._updateLocalMatrix = _updateLocalMatrix3d;
+        this._calculWorldMatrix = _calculWorldMatrix3d;
+        this._mulMat = cc.vmath.mat4.mul;
+    }
+    else {
+        this._updateLocalMatrix = _updateLocalMatrix2d;
+        this._calculWorldMatrix = _calculWorldMatrix2d;
+        this._mulMat = _mulMat2d;
+    }
+    this._renderFlag |= RenderFlow.FLAG_TRANSFORM;
+}
 
-            proto.getPosition = getPosition;
-            proto.setPosition = setPosition;
-            proto.getScale = getScale;
-            proto.setScale = setScale;
-            proto.getQuat = getQuat;
-            proto.setQuat = setQuat;
-            this.enabled = true;
-        }
-    },
-    disable () {
-        if (this.enabled) {
-            cc.Node.prototype._updateLocalMatrix = _updateLocalMatrix2d;
-            cc.Node.prototype._calculWorldMatrix = _calculWorldMatrix2d;
-            this.enabled = false;
+function _upgrade_1x_to_2x () {
+    if (this._is3DNode) {
+        this._update3DFunction();
+    }
+
+    _upgrade_1x_to_2x_2d.call(this);
+}
+
+
+let proto = cc.Node.prototype;
+const _updateLocalMatrix2d = proto._updateLocalMatrix;
+const _calculWorldMatrix2d = proto._calculWorldMatrix;
+const _upgrade_1x_to_2x_2d = proto._upgrade_1x_to_2x;
+const _mulMat2d = proto._mulMat;
+const _onBatchCreated2d = proto._onBatchCreated;
+
+proto.setPosition = setPosition;
+proto.setScale = setScale;
+
+proto._upgrade_1x_to_2x = _upgrade_1x_to_2x;
+proto._update3DFunction = _update3DFunction;
+
+cc.js.getset(proto, 'position', proto.getPosition, setPosition, false, true);
+
+cc.js.getset(proto, 'is3DNode', function () {
+    return this._is3DNode;
+}, function (v) {
+    if (this._is3DNode === v) return;
+    this._is3DNode = v;
+    this._update3DFunction();
+});
+
+cc.js.getset(proto, 'scaleZ', function () {
+    return this._scale.z;
+}, function (v) {
+    if (this._scale.z !== value) {
+        this._scale.z = value;
+        this.setLocalDirty(DirtyFlag.SCALE);
+        this._renderFlag |= RenderFlow.FLAG_TRANSFORM;
+
+        if (this._eventMask & SCALE_ON) {
+            this.emit(EventType.SCALE_CHANGED);
         }
     }
-}
+});
+
+cc.js.getset(proto, 'z', function () {
+    return this._position.z;
+}, function (value) {
+    let localPosition = this._position;
+    if (value !== localPosition.z) {
+        if (!CC_EDITOR || isFinite(value)) {
+            localPosition.z = value;
+            this.setLocalDirty(DirtyFlag.POSITION);
+            this._renderFlag |= RenderFlow.FLAG_WORLD_TRANSFORM;
+            // fast check event
+            if (this._eventMask & POSITION_ON) {
+                this.emit(EventType.POSITION_CHANGED);
+            }
+        }
+        else {
+            cc.error(ERR_INVALID_NUMBER, 'new z');
+        }
+    }
+});
+
+cc.js.getset(proto, 'eulerAngles', function () {
+    if (CC_EDITOR) {
+        return this._eulerAngles;
+    }
+    else {
+        return this._quat.getEulerAngles(cc.v3());
+    }
+}, function (v) {
+    if (CC_EDITOR) {
+        this._eulerAngles.set(v);
+    }
+
+    math.quat.fromEuler(this._quat, v.x, v.y, v.z);
+    this.setLocalDirty(DirtyFlag.ROTATION);
+    this._renderFlag |= RenderFlow.FLAG_TRANSFORM;
+});
+
+// This property is used for Mesh Skeleton Animation
+// Should be rememoved when node.rotation upgrade to quaternion value
+cc.js.getset(proto, 'quat', function () {
+    return this._quat;
+}, proto.setRotation);
