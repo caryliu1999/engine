@@ -65,10 +65,6 @@ let BlendFunc = cc.Class({
     setMaterial (index, material) {
         let materialVar = RenderComponent.prototype.setMaterial.call(this, index, material);
 
-        if (this._srcBlendFactor !== BlendFactor.SRC_ALPHA || this._dstBlendFactor !== BlendFactor.ONE_MINUS_SRC_ALPHA) {
-            this._updateMaterialBlendFunc(materialVar);
-        }
-
         return materialVar;
     },
 
