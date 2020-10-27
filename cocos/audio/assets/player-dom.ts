@@ -1,5 +1,5 @@
 /*
- Copyright (c) 2017-2018 Xiamen Yaji Software Co., Ltd.
+ Copyright (c) 2017-2020 Xiamen Yaji Software Co., Ltd.
 
  http://www.cocos.com
 
@@ -31,7 +31,7 @@
 import { clamp } from '../../core/math/utils';
 import { AudioPlayer, IAudioInfo, PlayingState } from './player';
 import { legacyCC } from '../../core/global-exports';
-import { createDomAudio } from '../audio-downloader';
+import { createDomAudio } from '../audio-utils';
 import { AudioManager } from './audio-manager';
 
 type ManagedAudio = AudioPlayerDOM | HTMLAudioElement;

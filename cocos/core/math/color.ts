@@ -1,6 +1,6 @@
 /*
  Copyright (c) 2013-2016 Chukong Technologies Inc.
- Copyright (c) 2017-2018 Xiamen Yaji Software Co., Ltd.
+ Copyright (c) 2017-2020 Xiamen Yaji Software Co., Ltd.
 
  http://www.cocos.com
 
@@ -287,7 +287,7 @@ export class Color extends ValueType {
 
     set a (alpha) {
         alpha = ~~clamp(alpha, 0, 255);
-        this._val = ((this._val & 0x00ffffff) | ((alpha << 24) >>> 0)) >>> 0;
+        this._val = ((this._val & 0x00ffffff) | (alpha << 24)) >>> 0;
     }
 
     // compatibility with vector interfaces
@@ -668,7 +668,7 @@ export class Color extends ValueType {
     }
 
     public _set_a_unsafe (alpha) {
-        this._val = ((this._val & 0x00ffffff) | ((alpha << 24) >>> 0)) >>> 0;
+        this._val = ((this._val & 0x00ffffff) | (alpha << 24)) >>> 0;
         return this;
     }
 }

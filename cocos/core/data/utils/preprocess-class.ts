@@ -1,6 +1,6 @@
 /*
  Copyright (c) 2013-2016 Chukong Technologies Inc.
- Copyright (c) 2017-2018 Xiamen Yaji Software Co., Ltd.
+ Copyright (c) 2017-2020 Xiamen Yaji Software Co., Ltd.
 
  http://www.cocos.com
 
@@ -141,8 +141,10 @@ function checkUrl (val, className, propName, url) {
  * 解析类型
  */
 function parseType (val, type, className, propName) {
+    const STATIC_CHECK = (EDITOR && DEV) || TEST;
+
     if (Array.isArray(type)) {
-        if ((EDITOR || TEST) && 'default' in val) {
+        if (STATIC_CHECK && 'default' in val) {
             if (!legacyCC.Class.isArray(val.default)) {
                 warnID(5507, className, propName);
             }
@@ -159,41 +161,43 @@ function parseType (val, type, className, propName) {
             return errorID(5508, className, propName);
         }
     }
-    if (EDITOR || TEST) {
-        if (typeof type === 'function') {
-            if (legacyCC.RawAsset.isRawAssetType(type)) {
-                warnID(5509, className, propName, js.getClassName(type));
-            } else if (type === String) {
-                val.type = legacyCC.String;
+    if (typeof type === 'function') {
+        if (type === String) {
+            val.type = legacyCC.String;
+            if (STATIC_CHECK) {
                 warnID(3608, `"${className}.${propName}"`);
-            } else if (type === Boolean) {
-                val.type = legacyCC.Boolean;
+            }
+        } else if (type === Boolean) {
+            val.type = legacyCC.Boolean;
+            if (STATIC_CHECK) {
                 warnID(3609, `"${className}.${propName}"`);
-            } else if (type === Number) {
-                val.type = legacyCC.Float;
+            }
+        } else if (type === Number) {
+            val.type = legacyCC.Float;
+            if (STATIC_CHECK) {
                 warnID(3610, `"${className}.${propName}"`);
             }
-        } else {
-            switch (type) {
-                case 'Number':
-                    warnID(5510, className, propName);
-                    break;
-                case 'String':
-                    warn(`The type of "${className}.${propName}" must be CCString, not "String".`);
-                    break;
-                case 'Boolean':
-                    warn(`The type of "${className}.${propName}" must be CCBoolean, not "Boolean".`);
-                    break;
-                case 'Float':
-                    warn(`The type of "${className}.${propName}" must be CCFloat, not "Float".`);
-                    break;
-                case 'Integer':
-                    warn(`The type of "${className}.${propName}" must be CCInteger, not "Integer".`);
-                    break;
-                case null:
-                    warnID(5511, className, propName);
-                    break;
-            }
+        }
+    } else if (STATIC_CHECK) {
+        switch (type) {
+            case 'Number':
+                warnID(5510, className, propName);
+                break;
+            case 'String':
+                warn(`The type of "${className}.${propName}" must be CCString, not "String".`);
+                break;
+            case 'Boolean':
+                warn(`The type of "${className}.${propName}" must be CCBoolean, not "Boolean".`);
+                break;
+            case 'Float':
+                warn(`The type of "${className}.${propName}" must be CCFloat, not "Float".`);
+                break;
+            case 'Integer':
+                warn(`The type of "${className}.${propName}" must be CCInteger, not "Integer".`);
+                break;
+            case null:
+                warnID(5511, className, propName);
+                break;
         }
     }
 }
@@ -221,41 +225,36 @@ function getBaseClassWherePropertyDefined_DEV (propName, cls) {
 
 // tslint:disable: no-shadowed-variable
 
-export function getFullFormOfProperty (options, propname_dev?, classname_dev?) {
+function _wrapOptions (isGetset: boolean, _default, type?: Function | Function[], isUrlType?: boolean) {
+    let res: {
+        default?: any,
+        _short?: boolean,
+        url?: any,
+        type?: any,
+    } = isGetset ? { _short: true } : { _short: true, default: _default };
+    if (type) {
+        if (isUrlType) {
+            res.url = type;
+        }
+        else {
+            res.type = type;
+        }
+    }
+    return res;
+}
+
+export function getFullFormOfProperty (options, isGetset, propname_dev?, classname_dev?) {
     const isLiteral = options && options.constructor === Object;
     if ( !isLiteral ) {
         if (Array.isArray(options) && options.length > 0) {
-
-            const type = options[0];
-            return {
-                default: [],
-                type: options,
-                _short: true,
-            };
+            return _wrapOptions(isGetset, [], options);
         } else if (typeof options === 'function') {
             const type = options;
-            if (!legacyCC.RawAsset.isRawAssetType(type)) {
-                return {
-                    default: js.isChildClassOf(type, legacyCC.ValueType) ? new type() : null,
-                    type,
-                    _short: true,
-                };
-            }
-            return {
-                default: '',
-                url: type,
-                _short: true,
-            };
+            return _wrapOptions(isGetset, js.isChildClassOf(type, legacyCC.ValueType) ? new type() : null, type);
         } else if (options instanceof PrimitiveType) {
-            return {
-                default: options.default,
-                _short: true,
-            };
+            return _wrapOptions(isGetset, options.default);
         } else {
-            return {
-                default: options,
-                _short: true,
-            };
+            return _wrapOptions(isGetset, options);
         }
     }
     return null;
@@ -264,7 +263,7 @@ export function getFullFormOfProperty (options, propname_dev?, classname_dev?) {
 export function preprocessAttrs (properties, className, cls) {
     for (const propName in properties) {
         let val = properties[propName];
-        const fullForm = getFullFormOfProperty(val, propName, className);
+        const fullForm = getFullFormOfProperty(val, false, propName, className);
         if (fullForm) {
             val = properties[propName] = fullForm;
         }
