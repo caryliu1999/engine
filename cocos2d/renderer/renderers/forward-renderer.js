@@ -253,6 +253,7 @@ export default class ForwardRenderer extends BaseRenderer {
   }
 
   _shadowStage (view, items) {
+    if (items.length === 0) return;
     // update rendering
     this._submitShadowStageUniforms(view);
 
@@ -289,6 +290,7 @@ export default class ForwardRenderer extends BaseRenderer {
   }
 
   _opaqueStage (view, items) {
+    if (items.length === 0) return;
     view.getPosition(_camPos);
 
     // update uniforms
@@ -306,6 +308,7 @@ export default class ForwardRenderer extends BaseRenderer {
   }
 
   _transparentStage (view, items) {
+    if (items.length === 0) return;
     view.getPosition(_camPos);
     view.getForward(_camFwd);
 
