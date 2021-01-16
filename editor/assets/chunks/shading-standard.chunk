@@ -96,7 +96,9 @@ struct StandardSurface {
 
       vec3 lightColor = cc_lightColor[i].rgb;
     #if CC_RECEIVE_SHADOW
-      CC_DIR_SHADOW_FACTOR(lightColor);
+      if (cc_lightPos[i].w > 0.0) {
+          CC_DIR_SHADOW_FACTOR(lightColor);
+      }
     #endif
 
       finalColor += SNL * lightColor * cc_lightColor[i].w * illum * att * (diffuseContrib + lspec);
@@ -135,13 +137,7 @@ struct StandardSurface {
     finalColor *= (diffuseContrib + specularContrib);
 
     float fAmb = 0.5 - N.y * 0.5;
-    #if USE_LIGHTMAP && !USE_BATCHING && !CC_FORWARD_ADD
-      vec3 skyColor = mix(cc_ambientGround.rgb, cc_ambientSky.rgb, s.lightmap.rgb);
-      skyColor = s.lightmap.a * skyColor + (1.0 - s.lightmap.a) * cc_ambientSky.rgb;
-      vec3 ambDiff = mix(skyColor, cc_ambientGround.rgb, fAmb) * cc_ambientSky.w;
-    #else
-      vec3 ambDiff = mix(cc_ambientSky.rgb, cc_ambientGround.rgb, fAmb) * cc_ambientSky.w;
-    #endif
+    vec3 ambDiff = mix(cc_ambientSky.rgb, cc_ambientGround.rgb, fAmb) * cc_ambientSky.w;
     finalColor += (ambDiff.rgb * diffuse);
 
     #if CC_USE_IBL

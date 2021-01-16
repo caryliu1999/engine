@@ -28,12 +28,12 @@
  * @module decorator
  */
 
+import { DEV, EDITOR, TEST } from 'internal:constants';
 import { CCString, CCInteger, CCFloat, CCBoolean } from '../utils/attribute';
 import { IExposedAttributes } from '../utils/attribute-defines';
 import { LegacyPropertyDecorator, getSubDict, getClassCache } from './utils';
 import { warnID, errorID } from '../../platform/debug';
 import { js } from '../../utils/js';
-import { DEV, EDITOR, TEST } from 'internal:constants';
 import { getFullFormOfProperty } from '../utils/preprocess-class';
 
 export type SimplePropertyType = Function | string | typeof CCString | typeof CCInteger | typeof CCFloat | typeof CCBoolean;
@@ -44,8 +44,7 @@ export type PropertyType = SimplePropertyType | SimplePropertyType[];
  * @zh CCClass 属性选项。
  * @en CCClass property options
  */
-export interface IPropertyOptions extends IExposedAttributes {
-}
+export type IPropertyOptions = IExposedAttributes
 
 /**
  * @en Declare as a CCClass property with options
@@ -108,16 +107,14 @@ function getDefaultFromInitializer (initializer) {
     let value;
     try {
         value = initializer();
-    }
-    catch (e) {
+    } catch (e) {
         // just lazy initialize by CCClass
         return initializer;
     }
     if (typeof value !== 'object' || value === null) {
         // string boolean number function undefined null
         return value;
-    }
-    else {
+    } else {
         // The default attribute will not be used in ES6 constructor actually,
         // so we don't need to simplify into `{}` or `[]` or vec2 completely.
         return initializer;
@@ -128,8 +125,7 @@ function extractActualDefaultValues (ctor) {
     let dummyObj;
     try {
         dummyObj = new ctor();
-    }
-    catch (e) {
+    } catch (e) {
         if (DEV) {
             warnID(3652, js.getClassName(ctor), e);
         }
@@ -147,7 +143,7 @@ function genProperty (
     cache,
 ) {
     let fullOptions;
-    let isGetset = descriptor && (descriptor.get || descriptor.set);
+    const isGetset = descriptor && (descriptor.get || descriptor.set);
     if (options) {
         fullOptions = getFullFormOfProperty(options, isGetset);
     }
@@ -176,35 +172,27 @@ function genProperty (
             return;
         }
 
-        let defaultValue: any;
-        let isDefaultValueSpecified = false;
         if (descriptor) {
             // In case of Babel, if an initializer is given for class field.
             // That initializer is passed to `descriptor.initializer`.
             // babel
             if (descriptor.initializer) {
-                defaultValue = getDefaultFromInitializer(descriptor.initializer);
-                isDefaultValueSpecified = true;
+                propertyRecord.default = getDefaultFromInitializer(descriptor.initializer);
             }
         } else {
             // In case of TypeScript, we can not directly capture the initializer.
             // We have to be hacking to extract the value.
             const actualDefaultValues = cache.default || (cache.default = extractActualDefaultValues(ctor));
             if (actualDefaultValues.hasOwnProperty(propertyKey)) {
-                defaultValue = actualDefaultValues[propertyKey];
-                isDefaultValueSpecified = true;
+                propertyRecord.default = actualDefaultValues[propertyKey];
             }
         }
 
         if ((EDITOR && !window.Build) || TEST) {
             if (!fullOptions && options && options.hasOwnProperty('default')) {
                 warnID(3653, propertyKey, js.getClassName(ctor));
-            } else if (!isDefaultValueSpecified) {
-                warnID(3654, js.getClassName(ctor), propertyKey);
             }
         }
-
-        propertyRecord.default = defaultValue;
     }
 
     properties[propertyKey] = propertyRecord;

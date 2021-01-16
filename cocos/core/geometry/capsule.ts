@@ -28,9 +28,9 @@
  * @module geometry
  */
 
-import { Vec3, Quat, Mat4, absMaxComponent } from "../math";
-import enums from "./enums";
-import { IVec3Like, IQuatLike } from "../math/type-define";
+import { Vec3, Quat, Mat4, absMaxComponent } from '../math';
+import enums from './enums';
+import { IVec3Like, IQuatLike } from '../math/type-define';
 
 /**
  * @en
@@ -38,8 +38,7 @@ import { IVec3Like, IQuatLike } from "../math/type-define";
  * @zh
  * 基础几何，胶囊体。
  */
-export class capsule {
-
+export class Capsule {
     /**
      * @en
      * Gets the type of the shape.
@@ -96,7 +95,7 @@ export class capsule {
     readonly ellipseCenter0: Vec3;
     readonly ellipseCenter1: Vec3;
 
-    constructor (radius: number = 0.5, halfHeight: number = 0.5, axis = 1) {
+    constructor (radius = 0.5, halfHeight = 0.5, axis = 1) {
         this._type = enums.SHAPE_CAPSULE;
         this.radius = radius;
         this.halfHeight = halfHeight;
@@ -116,7 +115,7 @@ export class capsule {
      * @zh
      * 变换此胶囊体。
      */
-    transform (m: Mat4, pos: IVec3Like, rot: IQuatLike, scale: IVec3Like, out: capsule) {
+    transform (m: Mat4, pos: IVec3Like, rot: IQuatLike, scale: IVec3Like, out: Capsule) {
         const ws = scale;
         const s = absMaxComponent(ws as Vec3);
         out.radius = this.radius * Math.abs(s);
@@ -143,19 +142,18 @@ export class capsule {
         const halfHeight = this.halfHeight;
         const axis = this.axis;
         switch (axis) {
-            case 0:
-                this.ellipseCenter0.set(halfHeight, 0, 0);
-                this.ellipseCenter1.set(-halfHeight, 0, 0);
-                break;
-            case 1:
-                this.ellipseCenter0.set(0, halfHeight, 0);
-                this.ellipseCenter1.set(0, -halfHeight, 0);
-                break;
-            case 2:
-                this.ellipseCenter0.set(0, 0, halfHeight);
-                this.ellipseCenter1.set(0, 0, -halfHeight);
-                break;
+        case 0:
+            this.ellipseCenter0.set(halfHeight, 0, 0);
+            this.ellipseCenter1.set(-halfHeight, 0, 0);
+            break;
+        case 1:
+            this.ellipseCenter0.set(0, halfHeight, 0);
+            this.ellipseCenter1.set(0, -halfHeight, 0);
+            break;
+        case 2:
+            this.ellipseCenter0.set(0, 0, halfHeight);
+            this.ellipseCenter1.set(0, 0, -halfHeight);
+            break;
         }
     }
-
 }

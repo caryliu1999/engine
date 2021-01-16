@@ -27,8 +27,8 @@
  * @packageDocumentation
  * @module terrain
  */
-import { Asset } from '../core/assets';
 import { ccclass } from 'cc.decorator';
+import { Asset } from '../core/assets';
 import { legacyCC } from '../core/global-exports';
 
 export const TERRAIN_MAX_LEVELS = 4;
@@ -49,13 +49,14 @@ export const TERRAIN_EAST_INDEX = 3;
 export const TERRAIN_DATA_VERSION = 0x01010001;
 export const TERRAIN_DATA_VERSION2 = 0x01010002;
 export const TERRAIN_DATA_VERSION3 = 0x01010003;
+export const TERRAIN_DATA_VERSION4 = 0x01010004;
 export const TERRAIN_DATA_VERSION_DEFAULT = 0x01010111;
 
 class TerrainBuffer {
-    public length: number = 0;
+    public length = 0;
     public buffer: Uint8Array = new Uint8Array(2048);
     private _buffView: DataView = new DataView(this.buffer.buffer);
-    private _seekPos: number = 0;
+    private _seekPos = 0;
 
     public reserve (size: number) {
         if (this.buffer.byteLength > size) {
@@ -196,9 +197,12 @@ class TerrainBuffer {
  * @zh 地形纹理信息
  */
 export class TerrainLayerInfo {
-    public slot: number = 0;
-    public tileSize: number = 1;
-    public detailMap: string = '';
+    public slot = 0;
+    public tileSize = 1;
+    public detailMap = '';
+    public normalMap = '';
+    public roughness = 1;
+    public metallic = 0;
 }
 
 /**
@@ -208,10 +212,10 @@ export class TerrainLayerInfo {
 @ccclass('cc.TerrainAsset')
 export class TerrainAsset extends Asset {
     protected _data: Uint8Array|null = null;
-    protected _tileSize: number = 1;
+    protected _tileSize = 1;
     protected _blockCount: number[] = [1, 1];
-    protected _weightMapSize: number = 128;
-    protected _lightMapSize: number = 128;
+    protected _weightMapSize = 128;
+    protected _lightMapSize = 128;
     protected _heights: Uint16Array = new Uint16Array();
     protected _weights: Uint8Array = new Uint8Array();
     protected _layerBuffer: number[] = [-1, -1, -1, -1];
@@ -229,8 +233,7 @@ export class TerrainAsset extends Asset {
     set _nativeAsset (value: ArrayBuffer) {
         if (this._data && this._data.byteLength === value.byteLength) {
             this._data.set(new Uint8Array(value));
-        }
-        else {
+        } else {
             this._data = new Uint8Array(value);
         }
 
@@ -381,9 +384,10 @@ export class TerrainAsset extends Asset {
         if (version === TERRAIN_DATA_VERSION_DEFAULT) {
             return true;
         }
-        if (version !== TERRAIN_DATA_VERSION &&
-            version !== TERRAIN_DATA_VERSION2 &&
-            version !== TERRAIN_DATA_VERSION3) {
+        if (version !== TERRAIN_DATA_VERSION
+            && version !== TERRAIN_DATA_VERSION2
+            && version !== TERRAIN_DATA_VERSION3
+            && version !== TERRAIN_DATA_VERSION4) {
             return false;
         }
 
@@ -425,7 +429,11 @@ export class TerrainAsset extends Asset {
                 this.layerInfos[i].slot = stream.readInt();
                 this.layerInfos[i].tileSize = stream.readFloat();
                 this.layerInfos[i].detailMap = stream.readString();
-
+                if (version >= TERRAIN_DATA_VERSION4) {
+                    this.layerInfos[i].normalMap = stream.readString();
+                    this.layerInfos[i].roughness = stream.readFloat();
+                    this.layerInfos[i].metallic = stream.readFloat();
+                }
             }
         }
 
@@ -436,7 +444,7 @@ export class TerrainAsset extends Asset {
         const stream = new TerrainBuffer();
 
         // version
-        stream.writeInt32(TERRAIN_DATA_VERSION3);
+        stream.writeInt32(TERRAIN_DATA_VERSION4);
 
         // geometry info
         stream.writeFloat(this.tileSize);
@@ -444,7 +452,7 @@ export class TerrainAsset extends Asset {
         stream.writeInt16(this.weightMapSize);
         stream.writeInt16(this.lightMapSize);
 
-         // heights
+        // heights
         stream.writeInt32(this.heights.length);
         for (let i = 0; i < this.heights.length; ++i) {
             stream.writeInt16(this.heights[i]);
@@ -468,6 +476,9 @@ export class TerrainAsset extends Asset {
             stream.writeInt32(this.layerInfos[i].slot);
             stream.writeFloat(this.layerInfos[i].tileSize);
             stream.writeString(this.layerInfos[i].detailMap);
+            stream.writeString(this.layerInfos[i].normalMap);
+            stream.writeFloat(this.layerInfos[i].roughness);
+            stream.writeFloat(this.layerInfos[i].metallic);
         }
 
         return stream.buffer;
@@ -477,6 +488,5 @@ export class TerrainAsset extends Asset {
         const stream = new TerrainBuffer();
         stream.writeInt32(TERRAIN_DATA_VERSION_DEFAULT);
         return stream.buffer;
-
     }
 }

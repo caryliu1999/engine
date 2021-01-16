@@ -1,10 +1,10 @@
-import { IRigidBody2D } from "../../spec/i-rigid-body";
-import { _decorator, Vec2, Component, error, Layers, IVec2Like } from "../../../core";
-import { ERigidBody2DType } from "../physics-types";
-import { ccclass } from "../../../core/data/class-decorator";
-import { EDITOR } from "internal:constants";
-import { createRigidBody } from "../instance";
-import { Joint2D } from "./joints/joint-2d";
+import { EDITOR } from 'internal:constants';
+import { IRigidBody2D } from '../../spec/i-rigid-body';
+import { _decorator, Vec2, Component, error, Layers, IVec2Like } from '../../../core';
+import { ERigidBody2DType } from '../physics-types';
+import { ccclass } from '../../../core/data/class-decorator';
+import { createRigidBody } from '../instance';
+import { Joint2D } from './joints/joint-2d';
 import { PhysicsGroup } from '../../../physics/framework/physics-enum';
 
 const { property, type, menu } = _decorator;
@@ -32,13 +32,13 @@ export class RigidBody2D extends Component {
     /**
      * @en
      * Is this a fast moving body that should be prevented from tunneling through
-     * other moving bodies? 
-     * Note : 
+     * other moving bodies?
+     * Note :
      * - All bodies are prevented from tunneling through kinematic and static bodies. This setting is only considered on dynamic bodies.
      * - You should use this flag sparingly since it increases processing time.
      * @zh
      * 这个刚体是否是一个快速移动的刚体，并且需要禁止穿过其他快速移动的刚体？
-     * 需要注意的是 : 
+     * 需要注意的是 :
      *  - 所有刚体都被禁止从 运动刚体 和 静态刚体 中穿过。此选项只关注于 动态刚体。
      *  - 应该尽量少的使用此选项，因为它会增加程序处理时间。
      */
@@ -60,8 +60,7 @@ export class RigidBody2D extends Component {
         if (this._body) {
             if (v === ERigidBody2DType.Animated) {
                 this._body.setType(ERigidBody2DType.Kinematic);
-            }
-            else {
+            } else {
                 this._body.setType(v);
             }
         }
@@ -87,7 +86,7 @@ export class RigidBody2D extends Component {
     }
 
     /**
-     * @en 
+     * @en
      * Scale the gravity applied to this body.
      * @zh
      * 缩放应用在此刚体上的重力值
@@ -240,7 +239,7 @@ export class RigidBody2D extends Component {
     // }
 
     /// RigidBody methods ///
-    
+
     /**
      * @en
      * Whether the rigid body is awake.
@@ -403,7 +402,6 @@ export class RigidBody2D extends Component {
      * Converts a world coordinate point to the given rigid body coordinate.
      * @zh
      * 将一个给定的世界坐标系下的向量转换为刚体本地坐标系下的向量
-     * @method getLocalVector
      * @param worldVector - a vector in world coordinates.
      * @param out - optional, the receiving vector
      */
@@ -413,6 +411,14 @@ export class RigidBody2D extends Component {
         }
         return out;
     }
+    /**
+     * @en
+     * Converts a given vector in this rigid body's local coordinate system to the world coordinate system
+     * @zh
+     * 将一个给定的刚体本地坐标系下的向量转换为世界坐标系下的向量
+     * @param localVector - a vector in world coordinates.
+     * @param out - optional, the receiving vector
+     */
     getWorldVector<Out extends IVec2Like> (localVector: IVec2Like, out: Out): Out {
         if (this._body) {
             return this._body.getWorldVector(localVector, out);
@@ -420,15 +426,55 @@ export class RigidBody2D extends Component {
         return out;
     }
 
+    /**
+     * @en
+     * Converts a given point in the world coordinate system to this rigid body's local coordinate system
+     * @zh
+     * 将一个给定的世界坐标系下的点转换为刚体本地坐标系下的点
+     * @param worldPoint - a point in world coordinates.
+     * @param out - optional, the receiving point
+     */
     getLocalPoint<Out extends IVec2Like> (worldPoint: IVec2Like, out: Out): Out {
         if (this._body) {
             return this._body.getLocalPoint(worldPoint, out);
         }
         return out;
     }
+    /**
+     * @en
+     * Converts a given point in this rigid body's local coordinate system to the world coordinate system
+     * @zh
+     * 将一个给定的刚体本地坐标系下的点转换为世界坐标系下的点
+     * @param localPoint - a point in local coordinates.
+     * @param out - optional, the receiving point
+     */
     getWorldPoint<Out extends IVec2Like> (localPoint: IVec2Like, out: Out): Out {
         if (this._body) {
             return this._body.getWorldPoint(localPoint, out);
+        }
+        return out;
+    }
+    /**
+     * @en
+     * Get the local position of the center of mass.
+     * @zh
+     * 获取刚体本地坐标系下的质心
+     */
+    getLocalCenter<Out extends IVec2Like> (out: Out): Out {
+        if (this._body) {
+            return this._body.getLocalCenter(out);
+        }
+        return out;
+    }
+    /**
+     * @en
+     * Get the world position of the center of mass.
+     * @zh
+     * 获取刚体世界坐标系下的质心
+     */
+    getWorldCenter<Out extends IVec2Like> (out: Out): Out {
+        if (this._body) {
+            return this._body.getWorldCenter(out);
         }
         return out;
     }
@@ -445,7 +491,6 @@ export class RigidBody2D extends Component {
         }
         return 0;
     }
-
 
     /// COMPONENT LIFECYCLE ///
     protected onLoad () {
@@ -491,7 +536,7 @@ export class RigidBody2D extends Component {
     @property
     private _angularDamping = 0;
     @property
-    private _linearVelocity = new Vec2;
+    private _linearVelocity = new Vec2();
     @property
     private _angularVelocity = 0;
     @property

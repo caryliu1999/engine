@@ -1,13 +1,13 @@
 import { EDITOR, DEBUG } from 'internal:constants';
-import { System, Vec2, director, Director, game, error, IVec2Like, Rect, Eventify } from "../../core";
-import { IPhysicsWorld } from "../spec/i-physics-world";
-import { createPhysicsWorld } from "./instance";
+import { System, Vec2, director, Director, game, error, IVec2Like, Rect, Eventify } from '../../core';
+import { IPhysicsWorld } from '../spec/i-physics-world';
+import { createPhysicsWorld } from './instance';
 import { physicsEngineId } from './physics-selector';
 import { DelayEvent } from './physics-internal-types';
-import { IPhysicsConfig, ICollisionMatrix } from "../../physics/framework/physics-config";
-import { CollisionMatrix } from "../../physics/framework/collision-matrix";
-import { ERaycast2DType, RaycastResult2D } from './physics-types';
-import { Collider2D } from "./components/colliders/collider-2d";
+import { IPhysicsConfig, ICollisionMatrix } from '../../physics/framework/physics-config';
+import { CollisionMatrix } from '../../physics/framework/collision-matrix';
+import { ERaycast2DType, RaycastResult2D, PHYSICS_2D_PTM_RATIO } from './physics-types';
+import { Collider2D } from './components/colliders/collider-2d';
 
 let instance: PhysicsSystem2D | null = null;
 
@@ -53,7 +53,7 @@ export class PhysicsSystem2D extends Eventify(System) {
     set gravity (gravity: Vec2) {
         this._gravity.set(gravity);
         if (!EDITOR) {
-            this.physicsWorld.setGravity(gravity);
+            this.physicsWorld.setGravity(new Vec2(gravity.x / PHYSICS_2D_PTM_RATIO, gravity.y / PHYSICS_2D_PTM_RATIO));
         }
     }
 
@@ -121,7 +121,6 @@ export class PhysicsSystem2D extends Eventify(System) {
      */
     public positionIterations = 10;
 
-
     /**
      * @en
      * Gets the wrappered object of the physical world through which you can access the actual underlying object.
@@ -178,7 +177,7 @@ export class PhysicsSystem2D extends Eventify(System) {
     private _autoSimulation = true;
     private _accumulator = 0;
     private _steping = false;
-    private readonly _gravity = new Vec2(0, -10);
+    private readonly _gravity = new Vec2(0, -10 * PHYSICS_2D_PTM_RATIO);
 
     private _delayEvents: DelayEvent[] = [];
 
@@ -186,13 +185,14 @@ export class PhysicsSystem2D extends Eventify(System) {
         return this._steping;
     }
 
-
     private constructor () {
         super();
 
         const config = game.config ? game.config.physics as IPhysicsConfig : null;
         if (config) {
             Vec2.copy(this._gravity, config.gravity as IVec2Like);
+            this._gravity.multiplyScalar(PHYSICS_2D_PTM_RATIO);
+
             this._allowSleep = config.allowSleep;
             this._fixedTimeStep = config.fixedTimeStep;
             this._maxSubSteps = config.maxSubSteps;
@@ -224,33 +224,33 @@ export class PhysicsSystem2D extends Eventify(System) {
             return;
         }
         if (!this._autoSimulation) {
-            return
+            return;
         }
 
         director.emit(Director.EVENT_BEFORE_PHYSICS);
 
         this._steping = true;
 
-        let i = 0;
-        let fixedTimeStep = this._fixedTimeStep;
-        let velocityIterations = this.velocityIterations;
-        let positionIterations = this.positionIterations;
+        const fixedTimeStep = this._fixedTimeStep;
+        const velocityIterations = this.velocityIterations;
+        const positionIterations = this.positionIterations;
 
         this._accumulator += deltaTime;
-        while (i < this._maxSubSteps && this._accumulator > fixedTimeStep) {
+        let substepIndex = 0;
+        while (substepIndex++ < this._maxSubSteps && this._accumulator > fixedTimeStep) {
             this.physicsWorld.step(fixedTimeStep, velocityIterations, positionIterations);
             this._accumulator -= fixedTimeStep;
         }
 
-        let events = this._delayEvents;
+        const events = this._delayEvents;
         for (let i = 0, l = events.length; i < l; i++) {
-            let event = events[i];
+            const event = events[i];
             event.func.call(event.target);
         }
         events.length = 0;
 
         this.physicsWorld.syncPhysicsToScene();
-        
+
         if (this.debugDrawFlags) {
             this.physicsWorld.drawDebug();
         }
@@ -262,11 +262,10 @@ export class PhysicsSystem2D extends Eventify(System) {
     _callAfterStep (target: object, func: Function) {
         if (this._steping) {
             this._delayEvents.push({
-                target: target,
-                func: func
+                target,
+                func,
             });
-        }
-        else {
+        } else {
             func.call(target);
         }
     }
@@ -326,7 +325,7 @@ export class PhysicsSystem2D extends Eventify(System) {
     }
 }
 
-director.once(Director.EVENT_INIT, function () {
+director.once(Director.EVENT_INIT, () => {
     initPhysicsSystem();
 });
 

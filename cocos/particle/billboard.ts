@@ -23,17 +23,17 @@
  THE SOFTWARE.
  */
 
-
 /**
  * @packageDocumentation
  * @module particle
  */
 
-import { builtinResMgr } from '../core/3d/builtin';
-import { createMesh } from '../core/3d/misc/utils';
-import { Material, Mesh, Texture2D } from '../core/assets';
-import { Component } from '../core/components/component';
 import { ccclass, help, executeInEditMode, menu, tooltip, type, serializable } from 'cc.decorator';
+import { builtinResMgr } from '../core/builtin';
+import { createMesh } from '../3d/misc';
+import { Mesh } from '../3d/assets';
+import { Material, Texture2D } from '../core/assets';
+import { Component } from '../core/components/component';
 import { Attribute, AttributeName, Format, PrimitiveMode } from '../core/gfx';
 import { Color, toDegree, toRadian, Vec4 } from '../core/math';
 import { scene } from '../core/renderer';
@@ -44,7 +44,6 @@ import { legacyCC } from '../core/global-exports';
 @menu('Components/Billboard')
 @executeInEditMode
 export class Billboard extends Component {
-
     @type(Texture2D)
     private _texture = null;
 
@@ -194,6 +193,6 @@ export class Billboard extends Component {
             this._material = new Material();
             this._material.copy(builtinResMgr.get<Material>('default-billboard-material'));
         }
-        model.initSubModel(0, this._mesh.renderingSubMeshes[0], this._material!);
+        model.initSubModel(0, this._mesh.renderingSubMeshes[0], this._material);
     }
 }

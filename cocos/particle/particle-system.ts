@@ -30,11 +30,10 @@
  * @module particle
  */
 
-
-
-import { RenderableComponent } from '../core/3d/framework/renderable-component';
-import { Material } from '../core/assets/material';
 import { ccclass, help, executeInEditMode, executionOrder, menu, tooltip, displayOrder, type, range, displayName, visible, formerlySerializedAs, override, radian, serializable } from 'cc.decorator';
+import { EDITOR } from 'internal:constants';
+import { RenderableComponent } from '../core/components/renderable-component';
+import { Material } from '../core/assets/material';
 import { Mat4, pseudoRandom, Quat, randomRangeInt, Vec2, Vec3 } from '../core/math';
 import { INT_MAX } from '../core/math/bits';
 import { scene } from '../core/renderer';
@@ -55,7 +54,7 @@ import ParticleSystemRenderer from './renderer/particle-system-renderer-data';
 import TrailModule from './renderer/trail';
 import { IParticleSystemRenderer } from './renderer/particle-system-renderer-base';
 import { PARTICLE_MODULE_PROPERTY } from './particle';
-import { EDITOR } from 'internal:constants';
+import { legacyCC } from '../core/global-exports';
 
 const _world_mat = new Mat4();
 const _world_rol = new Quat();
@@ -68,7 +67,6 @@ const superMaterials = Object.getOwnPropertyDescriptor(RenderableComponent.proto
 @executionOrder(99)
 @executeInEditMode
 export class ParticleSystem extends RenderableComponent {
-
     /**
      * @zh 粒子系统能生成的最大粒子数量。
      */
@@ -608,6 +606,8 @@ export class ParticleSystem extends RenderableComponent {
         this._customData2 = new Vec2();
 
         this._subEmitters = []; // array of { emitter: ParticleSystem, type: 'birth', 'collision' or 'death'}
+
+        legacyCC.director.on(legacyCC.Director.EVENT_BEFORE_COMMIT, this.beforeRender, this);
     }
 
     public onLoad () {
@@ -758,6 +758,7 @@ export class ParticleSystem extends RenderableComponent {
         // this._system.remove(this);
         this.processor.onDestroy();
         if (this._trailModule) this._trailModule.destroy();
+        legacyCC.director.off(legacyCC.Director.EVENT_BEFORE_COMMIT, this.beforeRender, this);
     }
 
     protected onEnable () {
@@ -783,14 +784,21 @@ export class ParticleSystem extends RenderableComponent {
             if (this.processor.updateParticles(scaledDeltaTime) === 0 && !this._isEmitting) {
                 this.stop();
             }
+        }
+        // update render data
+        this.processor.updateRenderData();
 
-            // update render data
-            this.processor.updateRenderData();
+        // update trail
+        if (this._trailModule && this._trailModule.enable) {
+            this._trailModule.updateRenderData();
+        }
+    }
 
-            // update trail
-            if (this._trailModule && this._trailModule.enable) {
-                this._trailModule.updateRenderData();
-            }
+    protected beforeRender () {
+        if (!this._isPlaying) return;
+        this.processor.beforeRender();
+        if (this._trailModule && this._trailModule.enable) {
+            this._trailModule.beforeRender();
         }
     }
 
@@ -867,7 +875,6 @@ export class ParticleSystem extends RenderableComponent {
             particle.randomSeed = randomRangeInt(0, 233280);
 
             this.processor.setNewParticle(particle);
-
         } // end of particles forLoop.
     }
 
@@ -969,6 +976,6 @@ export class ParticleSystem extends RenderableComponent {
     }
 
     public _onBeforeSerialize (props) {
-        return this.enableCulling ? props.filter(p => !PARTICLE_MODULE_PROPERTY.includes(p) || (this[p] && this[p].enable)) : props;
+        return this.enableCulling ? props.filter((p) => !PARTICLE_MODULE_PROPERTY.includes(p) || (this[p] && this[p].enable)) : props;
     }
 }

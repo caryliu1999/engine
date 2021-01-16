@@ -25,10 +25,33 @@
  */
 
 import { ccclass, executeInEditMode, serializable, playOnFocus, menu, help, editable, type } from 'cc.decorator';
-import { UIRenderable } from '../core/components/ui-base';
-import { Texture2D } from '../core/assets/texture-2d';
-import { UI } from '../core/renderer/ui/ui';
 import { EDITOR } from 'internal:constants';
+import { Renderable2D } from '../2d/framework';
+import { Texture2D } from '../core/assets/texture-2d';
+import { Batcher2D } from '../2d/renderer/batcher-2d';
+import { Vec2 } from '../core';
+
+class Point {
+    public point = new Vec2();
+    public dir = new Vec2();
+    public distance = 0;
+    public time = 0;
+
+    constructor (point?: Vec2, dir?: Vec2) {
+        if (point) this.point.set(point);
+        if (dir) this.dir.set(dir);
+    }
+
+    public setPoint (x, y) {
+        this.point.x = x;
+        this.point.y = y;
+    }
+
+    public setDir (x, y) {
+        this.dir.x = x;
+        this.dir.y = y;
+    }
+}
 
 /**
  * @en
@@ -46,9 +69,8 @@ import { EDITOR } from 'internal:constants';
 @playOnFocus
 @menu('UI/Render/MotionStreak')
 @help('i18n:COMPONENT.help_url.motionStreak')
-export class MotionStreak extends UIRenderable {
-    @serializable
-    private _preview: boolean = false;
+export class MotionStreak extends Renderable2D {
+    public static Point = Point;
 
     /**
      * @en Preview the trailing effect in editor mode.
@@ -63,9 +85,6 @@ export class MotionStreak extends UIRenderable {
         this._preview = val;
         this.reset();
     }
-
-    @serializable
-    private _fadeTime = 1;
     /**
      * @en The fade time to fade.
      * @zh 拖尾的渐隐时间，以秒为单位。
@@ -81,9 +100,6 @@ export class MotionStreak extends UIRenderable {
         this._fadeTime = val;
         this.reset();
     }
-
-    @serializable
-    private _minSeg = 1;
     /**
      * @en The minimum segment size.
      * @zh 拖尾之间最小距离。
@@ -97,15 +113,12 @@ export class MotionStreak extends UIRenderable {
     public set minSeg (val) {
         this._minSeg = val;
     }
-
     /**
      * @en The stroke's width.
      * @zh 拖尾的宽度。
      * @example
      * motionStreak.stroke = 64;
      */
-    @serializable
-    private _stroke = 64;
     @editable
     public get stroke () {
         return this._stroke;
@@ -113,9 +126,6 @@ export class MotionStreak extends UIRenderable {
     public set stroke (val) {
         this._stroke = val;
     }
-
-    @serializable
-    private _texture: Texture2D | null  = null
 
     /**
      * @en The texture of the MotionStreak.
@@ -133,9 +143,6 @@ export class MotionStreak extends UIRenderable {
 
         this._texture = val;
     }
-
-    @serializable
-    private _fastMode: boolean = false;
     /**
      * @en The fast Mode.
      * @zh 是否启用了快速模式。当启用快速模式，新的点会被更快地添加，但精度较低。
@@ -150,6 +157,24 @@ export class MotionStreak extends UIRenderable {
         this._fastMode = val;
     }
 
+    public get points () {
+        return this._points;
+    }
+
+    @serializable
+    private _preview = false;
+    @serializable
+    private _fadeTime = 1;
+    @serializable
+    private _minSeg = 1;
+    @serializable
+    private _stroke = 64;
+    @serializable
+    private _texture: Texture2D | null  = null;
+    @serializable
+    private _fastMode = false;
+    private _points: Point[] = [];
+
     public onEnable () {
         super.onEnable();
         this.reset();
@@ -163,7 +188,7 @@ export class MotionStreak extends UIRenderable {
         }
 
         if (!this._renderData) {
-            if (this._assembler && this._assembler.createData){
+            if (this._assembler && this._assembler.createData) {
                 this._renderData = this._assembler.createData(this);
                 this._renderData!.material = this.material;
             }
@@ -190,7 +215,7 @@ export class MotionStreak extends UIRenderable {
      * myMotionStreak.reset();
      */
     public reset () {
-        if (this._assembler) this._assembler.clear();
+        this._points.length = 0;
         if (this._renderData) this._renderData.clear();
     }
 
@@ -199,7 +224,7 @@ export class MotionStreak extends UIRenderable {
         if (this._assembler) this._assembler.update(this, dt);
     }
 
-    public _render (render: UI) {
-        render.commitComp(this, this._texture!, this._assembler, null);
+    public _render (render: Batcher2D) {
+        render.commitComp(this, this._texture, this._assembler, null);
     }
 }

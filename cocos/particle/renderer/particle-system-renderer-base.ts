@@ -50,9 +50,10 @@ export interface IParticleSystemRenderer {
     setNewParticle (p: Particle): void;
     updateParticles (dt: number): number;
     updateRenderData (): void;
-    enableModule (name: string, val: Boolean, pm: IParticleModule): void;
+    enableModule (name: string, val: boolean, pm: IParticleModule): void;
     updateTrailMaterial (): void;
     getDefaultTrailMaterial (): any;
+    beforeRender (): void;
 }
 
 export abstract class ParticleSystemRendererBase implements IParticleSystemRenderer {
@@ -97,7 +98,7 @@ export abstract class ParticleSystemRendererBase implements IParticleSystemRende
             if (this._model.scene) {
                 this.detachFromScene();
             }
-            this._particleSystem!._getRenderScene().addModel(this._model);
+            this._particleSystem._getRenderScene().addModel(this._model);
         }
     }
 
@@ -133,5 +134,6 @@ export abstract class ParticleSystemRendererBase implements IParticleSystemRende
     public abstract setNewParticle (p: Particle): void;
     public abstract updateParticles (dt: number): number;
     public abstract updateRenderData (): void;
-    public abstract enableModule (name: string, val: Boolean, pm: IParticleModule): void;
+    public abstract enableModule (name: string, val: boolean, pm: IParticleModule): void;
+    public abstract beforeRender (): void;
 }

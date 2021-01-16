@@ -23,8 +23,12 @@
  THE SOFTWARE.
  */
 
+/**
+ * @packageDocumentation
+ * @hidden
+ */
 
-import { select } from '../framework/physics-selector';
+import { selector } from '../framework/physics-selector';
 
 import { CannonRigidBody } from './cannon-rigid-body';
 import { CannonWorld } from './cannon-world';
@@ -41,7 +45,7 @@ import { CannonPlaneShape } from './shapes/cannon-plane-shape';
 import { CannonPointToPointConstraint } from './constraints/cannon-point-to-point-constraint';
 import { CannonHingeConstraint } from './constraints/cannon-hinge-constraint';
 
-select('cannon.js', {
+selector.select('cannon.js', {
     PhysicsWorld: CannonWorld,
     RigidBody: CannonRigidBody,
 
@@ -57,5 +61,3 @@ select('cannon.js', {
     PointToPointConstraint: CannonPointToPointConstraint,
     HingeConstraint: CannonHingeConstraint,
 });
-
-import './deprecated';

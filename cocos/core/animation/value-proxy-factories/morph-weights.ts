@@ -29,7 +29,7 @@
  */
 
 import { ccclass, serializable } from 'cc.decorator';
-import { MeshRenderer } from '../../3d/framework/mesh-renderer';
+import { MeshRenderer } from '../../../3d/framework/mesh-renderer';
 import { IValueProxyFactory } from '../value-proxy';
 
 /**
@@ -45,7 +45,7 @@ export class MorphWeightsValueProxy implements IValueProxyFactory {
      * @zh 子网格索引。
      */
     @serializable
-    public subMeshIndex: number = 0;
+    public subMeshIndex = 0;
 
     public forTarget (target: MeshRenderer) {
         return {

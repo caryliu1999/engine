@@ -49,6 +49,9 @@ import { Constraint } from './components/constraints/constraint';
 import { HingeConstraint } from './components/constraints/hinge-constraint';
 import { PointToPointConstraint } from './components/constraints/point-to-point-constraint';
 
+import { legacyCC } from '../../core/global-exports';
+import { selector } from './physics-selector';
+
 export {
     PhysicsSystem,
     PhysicsRayResult,
@@ -69,13 +72,12 @@ export {
     PointToPointConstraint,
 
     RigidBody,
-
     PhysicsMaterial,
-
     ConstantForce,
+
+    selector,
 };
 
-import { legacyCC } from '../../core/global-exports';
 legacyCC.PhysicsSystem = PhysicsSystem;
 
 legacyCC.PhysicsMaterial = PhysicsMaterial;
@@ -83,6 +85,4 @@ legacyCC.PhysicsRayResult = PhysicsRayResult;
 legacyCC.ConstantForce = ConstantForce;
 
 export * from './physics-interface';
-export { EAxisDirection, ERigidBodyType } from './physics-enum';
-
-export * from './deprecated';
+export * from './physics-enum';

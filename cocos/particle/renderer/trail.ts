@@ -23,15 +23,14 @@
  THE SOFTWARE.
  */
 
-
 /**
  * @packageDocumentation
  * @module particle
  */
 
-import { Material } from '../../core/assets/material';
-import { RenderingSubMesh } from '../../core/assets/mesh';
 import { ccclass, tooltip, displayOrder, type, serializable } from 'cc.decorator';
+import { Material } from '../../core/assets/material';
+import { RenderingSubMesh } from '../../core/assets/rendering-sub-mesh';
 import { director } from '../../core/director';
 import { AttributeName, BufferUsageBit, Format, FormatInfos, MemoryUsageBit, PrimitiveMode } from '../../core/gfx/define';
 import { Device, Attribute, Buffer, IndirectBuffer, BufferInfo, DrawInfo, DRAW_INFO_SIZE } from '../../core/gfx';
@@ -43,7 +42,6 @@ import GradientRange from '../animator/gradient-range';
 import { Space, TextureMode, TrailMode } from '../enum';
 import { Particle } from '../particle';
 import { legacyCC } from '../../core/global-exports';
-
 
 const PRE_TRIANGLE_INDEX = 1;
 const NEXT_TRIANGLE_INDEX = 1 << 2;
@@ -170,7 +168,6 @@ class TrailSegment {
 
 @ccclass('cc.TrailModule')
 export default class TrailModule {
-
     /**
      * 是否启用。
      */
@@ -508,7 +505,7 @@ export default class TrailModule {
             const end = trailSeg.start >= trailSeg.end ? trailSeg.end + trailSeg.trailElements.length : trailSeg.end;
             const trailNum = end - trailSeg.start;
             // const lastSegRatio = vec3.distance(trailSeg.getTailElement()!.position, p.position) / this._minParticleDistance;
-            const textCoordSeg = 1 / (trailNum /*- 1 + lastSegRatio*/);
+            const textCoordSeg = 1 / (trailNum /* - 1 + lastSegRatio */);
             const startSegEle = trailSeg.trailElements[trailSeg.start];
             this._fillVertexBuffer(startSegEle, this.colorOverTrail.evaluate(1, 1), indexOffset, 1, 0, NEXT_TRIANGLE_INDEX);
             for (let i = trailSeg.start + 1; i < end; i++) {
@@ -564,7 +561,6 @@ export default class TrailModule {
                 this._fillVertexBuffer(_temp_trailEle, this.colorOverTrail.evaluate(0, 1), indexOffset, 0, trailNum, PRE_TRIANGLE_INDEX);
             }
         }
-        this.updateIA(this.ibOffset);
     }
 
     public updateIA (count: number) {
@@ -577,6 +573,10 @@ export default class TrailModule {
             this._iaInfo.drawInfos[0].indexCount = count;
             this._iaInfoBuffer!.update(this._iaInfo);
         }
+    }
+
+    public beforeRender () {
+        this.updateIA(this.ibOffset);
     }
 
     private _createModel () {
